@@ -1,0 +1,12 @@
+# Ignore everything
+*
+# But these files
+!.gitignore
+!.gitattributes
+!CMakeLists.txt
+!LICENSE
+# And these directories
+!clips60/
+!clipsserver/
+!docs/
+!tests/
