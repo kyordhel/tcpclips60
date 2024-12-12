@@ -4,9 +4,12 @@
 !.gitignore
 !.gitattributes
 !CMakeLists.txt
+!Doxyfile
 !LICENSE
+# !readme.MD
 # And these directories
 !clips60/
 !clipsserver/
+# !clipscontrol/
 !docs/
 !tests/
