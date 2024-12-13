@@ -60,7 +60,7 @@ std::string get_current_path(){
 * *** *******************************************************/
 Server::Server():
 	// clipsFile("cubes.dat"),
-	port(5000), defaultMsgInFact("network"), acceptorPtr(NULL),
+	port(5000), defaultMsgInFact("network 0.0.0.0:0"), acceptorPtr(NULL),
 	flgFacts(false), flgRules(false), clppath(get_current_path()){
 }
 
@@ -133,7 +133,7 @@ bool Server::initTcpServer(){
 
 void Server::acceptHandler(const boost::system::error_code& error, std::shared_ptr<tcp::socket> socketPtr){
 	if(!error){
-		auto sp = Session::makeShared(socketPtr, queue);
+		auto sp = Session::makeShared(socketPtr, *this);
 		clients[sp->getEndPointStr()] = sp;
 		printf("Connected client %s\n", sp->getEndPointStr().c_str());
 	}
@@ -229,17 +229,26 @@ bool Server::loadFile(std::string const& fpath){
 }
 
 
+void Server::enqueueTcpMessage(std::shared_ptr<TcpMessage> messagePtr){
+	queue.produce(messagePtr);
+}
+
 /**
- * Parses messages from subscribed topics
+ * Parses messages from network clients
  * Re-implements original parse_network_message by Jesús Savage
- * @param m String contained in the topic message
+ * @param msgPtr A pointer to the received message
+ * @param m      The received message
+
  */
-void Server::parseMessage(const std::string& m){
+void Server::parseMessage(std::shared_ptr<TcpMessage> msg){
+	std::string& m = msg->getMessage();
 	if((m[0] == 0) && (m.length()>1)){
 		handleCommand(m.substr(1));
 		return;
 	}
-	assertFact( m );
+
+	std::string& ep = msg->getSource();
+	assertFact(m, "network " + ep);
 }
 
 
@@ -353,6 +362,7 @@ void Server::stop(){
 		asyncThread.join();
 }
 
+
 void Server::runAsync(){
 	asyncThread = std::thread(&Server::run, this);
 }
@@ -371,23 +381,6 @@ void Server::run(){
 		parseMessage( queue.consume() );
 	}
 }
-
-
-
-/* ** ********************************************************
-*
-* Class methods: Callbacks
-*
-* *** *******************************************************/
-// void Server::subscriberCallback(std_msgs::String::ConstPtr const& msg, std::string const& topic) {
-// 	if(msg->data.length() < 1) return;
-// 	if (topic == topicIn){
-// 		queue.produce( msg->data );
-// 		return;
-// 	}
-// 	if(msg->data[0] == 0) return;
-// 	assertFact(msg->data, topicFacts[topic]);
-// }
 
 
 

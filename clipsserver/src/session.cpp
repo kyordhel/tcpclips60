@@ -1,3 +1,4 @@
+#include "server.h"
 #include "session.h"
 #include <boost/bind/bind.hpp>
 
@@ -7,8 +8,8 @@ using asio::ip::tcp;
 
 
 Session::Session(std::shared_ptr<boost::asio::ip::tcp::socket> socketPtr,
-				 sync_queue<std::string>& queue):
-	socketPtr(socketPtr), queue(queue){
+				 Server& server):
+	socketPtr(socketPtr), server(server){
 		std::ostringstream os;
 		auto ep = socketPtr->remote_endpoint();
 		os << ep;
@@ -52,7 +53,8 @@ void Session::asyncReadHandler(const boost::system::error_code& error, size_t by
 	std::string s;
 	std::getline(is, s);
 	printf("[%s]: %s\n", endpoint.c_str(), s.c_str());
-	queue.produce(s);
+	// queue.produce(s);
+	server.enqueueTcpMessage( TcpMessage::makeShared(endpoint, s) );
 	beginAsyncReceivePoll();
 }
 
@@ -62,9 +64,10 @@ void Session::send(const std::string& s){
 	socketPtr->send( asio::buffer(s) );
 }
 
+
 std::shared_ptr<Session> Session::makeShared(
 			std::shared_ptr<tcp::socket> socketPtr,
-			sync_queue<std::string>& queue
+			Server& server
 	){
-	return std::shared_ptr<Session>(new Session(socketPtr, queue));
+	return std::shared_ptr<Session>(new Session(socketPtr, server));
 }

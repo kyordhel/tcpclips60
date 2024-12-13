@@ -23,6 +23,7 @@
 /** @endcond */
 
 #include "session.h"
+#include "tcp_message.h"
 #include "sync_queue.h"
 
 
@@ -30,70 +31,6 @@
  * Implements a base class for a bridge between ROS and CLIPS
  */
 class Server{
-protected:
-	/**
-	 * Stores the file that will be loaded into CLIPS during
-	 * initialization.
-	 */
-	std::string clipsFile;
-
-	/**
-	 * Specifies the basepath where CLP files are located
-	 */
-	std::string clppath;
-
-	/**
-	 * When true, activates defrule watching during initialization
-	 */
-	bool flgRules;
-
-	/**
-	 * When true, activates fact watching during initialization
-	 */
-	bool flgFacts;
-
-	/**
-	 * Internal flag that keeps the bridge running.
-	 * It is set to true by run() until changed to false by stop() or
-	 * unless an external event modifies it.
-	 */
-	bool running;
-
-	/**
-	 * The syncrhonous queue used to pass messages to CLIPS.
-	 * @remark CLIPS functions crash if called from a separate thread.
-	 */
-	sync_queue<std::string> queue;
-
-	/**
-	 * Thread used to asynchronously run the bridge
-	 */
-	std::thread asyncThread;
-
-	/**
-	 * Stores the name of the topic this bridge listens to
-	 */
-	uint16_t port;
-
-	/**
-	 * Context required for async connections
-	 */
-	boost::asio::io_context io_context;
-
-	std::shared_ptr<boost::asio::ip::tcp::acceptor> acceptorPtr;
-
-	/**
-	 * Stores the name of the fact where network messages are asserted.
-	 */
-	std::string defaultMsgInFact;
-
-	/**
-	 * Active connections to tcp clients
-	 */
-	// std::unordered_map<boost::asio::ip::tcp::endpoint, std::shared_ptr<boost::asio::ip::tcp::socket>> clients;
-	std::unordered_map<std::string, std::shared_ptr<Session>> clients;
-
-
 public:
 	/**
 	 * Initializes a new instance of Server
@@ -161,18 +98,14 @@ public:
 	void stop();
 
 	/**
-	 * Handles all incomming messages from all subscriptions
-	 * @remark      This method is passed to all created subscriber
-	 *              objects during the initialization and allows to
-	 *              dynamically subscribe to new topics using the
-	 *              (rossub topic) CLISP user-function.
-	 * @param msg   The received message
-	 * @param topic The topic from where the message comes from
+	 * Enqueues a received TCP message in the server's message queue
+	 * @param messagePtr A pointer to the received message
 	 */
-	// void subscriberCallback(std_msgs::String::ConstPtr const& msg, std::string const& topic);
+	void enqueueTcpMessage(std::shared_ptr<TcpMessage> messagePtr);
+
+
 
 protected:
-
 	/**
 	 * Asserts the input string as a fact as (assert (network s))
 	 * @param s                    The string to be asserted
@@ -221,12 +154,13 @@ protected:
 	virtual bool initTcpServer();
 
 private:
+
 	/**
-	 * Parses messages received via topicIn.
+	 * Parses messages received via network.
 	 * Two types of messages are accepted: facts and commands.
 	 * Any non-command string is considered a fact and thus is asserted
 	 * with Server::assertFact().
-	 * Commands are string with start with a NULL character ('\\0').
+	 * Commands are strings that start with a NULL character ('\\0').
 	 * The following commands are supported:
 	 * assert      calls clips::assertString()
 	 * reset       calls clips::reset()
@@ -237,9 +171,13 @@ private:
 	 * load  file  Loads the specified file
 	 * run num     Performs the specified number of runs
 	 * log         Unimplemented
-	 * @param m The received message
+	 *
+	 * @param cliEp      The message source. A string representation of the
+	 *                   remote endpoint of the network client that sends the message
+	 * @param message    The received message
 	 */
-	void parseMessage(const std::string& m);
+	void parseMessage(std::shared_ptr<TcpMessage> m);
+	// void parseMessage(const TcpMessage& m);
 
 	/**
 	 * Handles commands received via topicIn
@@ -366,6 +304,8 @@ private:
 	 */
 	void printAgenda();
 
+
+private:
 	/**
 	 * Friend function called by the homonymous registered CLIPS user-
 	 * function when (sendto destport message) is invoked.
@@ -389,6 +329,75 @@ private:
 	 * @return            1 if the subscription succeeded, 0 otherwise
 	 */
 	friend int server_broadcast_invoker(Server& server, const std::string& message);
+
+
+protected:
+	/**
+	 * Stores the file that will be loaded into CLIPS during
+	 * initialization.
+	 */
+	std::string clipsFile;
+
+	/**
+	 * Specifies the basepath where CLP files are located
+	 */
+	std::string clppath;
+
+	/**
+	 * When true, activates defrule watching during initialization
+	 */
+	bool flgRules;
+
+	/**
+	 * When true, activates fact watching during initialization
+	 */
+	bool flgFacts;
+
+	/**
+	 * Internal flag that keeps the bridge running.
+	 * It is set to true by run() until changed to false by stop() or
+	 * unless an external event modifies it.
+	 */
+	bool running;
+
+	/**
+	 * The syncrhonous queue used to pass messages to CLIPS.
+	 * @remark CLIPS functions crash if called from a separate thread.
+	 */
+	sync_queue<std::shared_ptr<TcpMessage>> queue;
+
+	/**
+	 * Thread used to asynchronously run the bridge
+	 */
+	std::thread asyncThread;
+
+	/**
+	 * Stores the name of the topic this bridge listens to
+	 */
+	uint16_t port;
+
+	/**
+	 * Context required for async connections
+	 */
+	boost::asio::io_context io_context;
+
+	/**
+	 * Pointer to an acceptor objects that handles incomming connections
+	 */
+	std::shared_ptr<boost::asio::ip::tcp::acceptor> acceptorPtr;
+
+	/**
+	 * Stores the name of the fact where network messages are asserted.
+	 */
+	std::string defaultMsgInFact;
+
+	/**
+	 * Active connections to tcp clients
+	 */
+	// std::unordered_map<boost::asio::ip::tcp::endpoint, std::shared_ptr<boost::asio::ip::tcp::socket>> clients;
+	std::unordered_map<std::string, std::shared_ptr<Session>> clients;
+
+
 };
 
 #endif // __CLIPS_BRIDGE_H__

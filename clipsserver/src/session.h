@@ -19,18 +19,22 @@
 #include <boost/asio.hpp>
 /** @endcond */
 
-#include "sync_queue.h"
+#include "tcp_message.h"
+
+
+
+class Server;
 
 class Session{
 public:
 	/**
 	 * Initializes a new instance of Session
-	 * @param socketPtr The underlaying connection socket to the remote client
-	 * @param queue     A queue to store received messages
+	 * @param socketPtr    The underlaying connection socket to the remote client.
+	 * @param server       The server that manages the session and handles incomming messages.
 	 */
 	Session(
 		std::shared_ptr<boost::asio::ip::tcp::socket> socketPtr,
-		sync_queue<std::string>& queue
+		Server& serverPtr
 	);
 	~Session();
 
@@ -101,20 +105,20 @@ private:
 	std::shared_ptr<boost::asio::ip::tcp::socket> socketPtr;
 
 	/**
-	 * Received messages are stored here.
+	 * The sessions lord and master
 	 */
-	sync_queue<std::string>& queue;
+	Server& server;
 
 
 public:
 	/**
 	 * Returns a shared pointer to a new instance of Session
 	 * @param socketPtr The underlaying connection socket to the remote client
-	 * @param queue     A queue to store received messages
+	 * @param server    The server that manages the session and handles incomming messages.
 	 */
 	static std::shared_ptr<Session> makeShared(
 			std::shared_ptr<boost::asio::ip::tcp::socket> socketPtr,
-			sync_queue<std::string>& queue
+			Server& server
 	);
 };
 
