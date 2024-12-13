@@ -4,6 +4,7 @@ import os
 import sys
 import signal
 import socket
+import struct
 import threading
 from time import sleep
 
@@ -115,8 +116,10 @@ def publish(s:str):
 
 	@param s The string to send
 	'''
-	msg = f'\0raw {s}\n'
+	msg = f'\0raw {s}'
 	payload = msg.encode('utf8')
+	msglen = struct.pack('@H', 2 + len(payload))
+	payload = msglen + payload
 	sckt.send( payload )
 #end def
 
@@ -150,15 +153,23 @@ def async_rcv_loop():
 		data = sckt.recv(65536)
 		if data == b'':
 			print('\nDisconnected')
-			sckt.shutdown(0)
 			os.kill(os.getpid(), signal.SIGINT)
 			return
 
-		msg = data.decode('utf8')
-		if msg:
-			print(f'CLIPS: { msg.strip() }')
+		printMessages(data)
 #end def
 
+
+def printMessages(data):
+	cc = 0;
+	while cc < len(data):
+		msglen = struct.unpack('@H', data[cc:cc+2])[0] - 2
+		cc+=2
+		msg = data[cc:cc+msglen].decode('utf-8')
+		if msg:
+			print(f'CLIPS: { msg.strip() }')
+		cc+= msglen
+#end def
 
 def cleanup():
 	global running
@@ -167,7 +178,9 @@ def cleanup():
 		sckt.shutdown(0)
 		sckt.close()
 	except: pass
-	thread.join(500)
+	try:
+		thread.join(500)
+	except: pass
 #end def
 
 

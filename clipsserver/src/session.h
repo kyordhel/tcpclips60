@@ -87,6 +87,25 @@ private:
 	 */
 	void asyncReadHandler(const boost::system::error_code& error, size_t bytes_transferred);
 
+	/**
+	 * Verifies whether all data has been received
+	 * @param error Error produced when accepting the connection
+	 * @param peer  The number of bytes transferred
+	 */
+	size_t checkTransferComplete(const boost::system::error_code& error, size_t bytes_transferred);
+
+	/**
+	 * Reads the header of the message from the buffer without advancing the read cursor.
+	 * @param is A istream to read the buffer
+	 */
+	uint16_t peekMessageHeader(std::istream& is);
+
+	/**
+	 * Reads the a message from the buffer.
+	 * @param is A istream to read the buffer
+	 */
+	std::string fetchStringFromBuffer(std::istream& is);
+
 
 private:
 	/**

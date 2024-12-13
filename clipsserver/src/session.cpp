@@ -33,11 +33,21 @@ std::shared_ptr<boost::asio::ip::tcp::socket> Session::getSocketPtr() const{
 
 
 void Session::beginAsyncReceivePoll(){
-	asio::async_read_until(*socketPtr, buffer, "\n",
-	// asio::async_read(*socketPtr, buffer,
+	buffer.prepare(0xffff);
+	// asio::async_read_until(*socketPtr, buffer, "\n",
+	asio::async_read(*socketPtr, buffer,
+		// boost::bind(&Session::checkTransferComplete, this,
+			// boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred),
+		boost::asio::transfer_at_least(3),
 		boost::bind(&Session::asyncReadHandler, this,
 			boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)
 	);
+}
+
+size_t Session::checkTransferComplete(const boost::system::error_code& error, size_t bytes_transferred){
+	// uint16_t* hdrPtr = (uint16_t*)buffer.data();
+	// printf("HDR: 0x%4x\tBT: 0x%4x\n", *hdrPtr, bytes_transferred);
+	return 0;
 }
 
 void Session::asyncReadHandler(const boost::system::error_code& error, size_t bytes_transferred){
@@ -46,22 +56,52 @@ void Session::asyncReadHandler(const boost::system::error_code& error, size_t by
 		return;
 	}
 
-	// asio::streambuf::const_buffers_type cbt = buffer.data();
-	// std::string s(	boost::asio::buffers_begin(cbt),
-	// 				boost::asio::buffers_begin(cbt) + bytes_transferred);
 	std::istream is(&buffer);
-	std::string s;
-	std::getline(is, s);
-	printf("[%s]: %s\n", endpoint.c_str(), s.c_str());
-	// queue.produce(s);
-	server.enqueueTcpMessage( TcpMessage::makeShared(endpoint, s) );
+
+	do{
+		// 1. Fetch header.
+		// Header is 2 bytes and contains the size of the message
+		uint16_t msgsize = peekMessageHeader(is);
+		// 2. If the buffer size is smaller than the header the message is incomplete. Skip.
+		if(buffer.size() < msgsize) break;
+		// 3. Retrieve the message
+		std::string s = fetchStringFromBuffer(is);
+		// 4. Enqueue the message
+		server.enqueueTcpMessage( TcpMessage::makeShared(endpoint, s) );
+	}while(buffer.size() > 0);
 	beginAsyncReceivePoll();
 }
+
+uint16_t Session::peekMessageHeader(std::istream& is){
+	uint16_t hdr;
+	is.read((char*)&hdr, sizeof(hdr));
+	is.unget(); is.unget();
+	return hdr;
+}
+
+std::string Session::fetchStringFromBuffer(std::istream& is){
+	// Reads header again
+	uint16_t bytesToRead;
+	is.read((char*)&bytesToRead, sizeof(bytesToRead));
+
+	std::string s(bytesToRead, 0);
+	is.read(&s[0], bytesToRead);
+	return s;
+}
+
 
 void Session::send(const std::string& s){
 	if(!this->socketPtr || !this->socketPtr->is_open() ) return;
 	// asio::write( *socketPtr, asio::buffer(message) );
-	socketPtr->send( asio::buffer(s) );
+	//
+	uint16_t packetsize = 2 + s.length();
+	char buffer[packetsize];
+	buffer[0] = *((char*)&packetsize);
+	buffer[1] = *((char*)&packetsize +1);
+	for(size_t i = 0; i < s.length(); ++i)
+		buffer[i+2] = s[i];
+	// buffer[packetsize-1] = 0;
+	socketPtr->send( asio::buffer(buffer, packetsize) );
 }
 
 

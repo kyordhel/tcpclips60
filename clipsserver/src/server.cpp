@@ -241,6 +241,8 @@ void Server::enqueueTcpMessage(std::shared_ptr<TcpMessage> messagePtr){
 
  */
 void Server::parseMessage(std::shared_ptr<TcpMessage> msg){
+	// printf("[%s]: %s\n", msg->getSource().c_str(), msg->getMessage().c_str());
+
 	std::string& m = msg->getMessage();
 	if((m[0] == 0) && (m.length()>1)){
 		handleCommand(m.substr(1));
