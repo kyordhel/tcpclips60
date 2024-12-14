@@ -6,8 +6,9 @@
 !CMakeLists.txt
 !Doxyfile
 !LICENSE
-# !readme.MD
+!readme.MD
 # And these directories
+!build/
 !clips60/
 !clipsserver/
 # !clipscontrol/
