@@ -3,7 +3,7 @@ project(socketclips)
 
 ## Compile as C++14
 add_compile_options(-std=c++14)
-
+find_package(Boost COMPONENTS thread REQUIRED)
 
 ###########
 ## Build ##
@@ -18,8 +18,8 @@ add_subdirectory(clipswrapper)
 ## Build the server
 add_subdirectory(clipsserver)
 
-## Build the clipscontrol node
+## Build the clipscontrol app
 # add_subdirectory(clipscontrol)
 
-## Build the test node
-# add_subdirectory(test)
+## Build the testing apps
+add_subdirectory(tests)
