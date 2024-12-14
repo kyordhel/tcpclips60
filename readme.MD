@@ -36,9 +36,9 @@ cd ..
 
 
 ## Step 2: Test it
-Simply go to the root of the repo and run `test.sh`:
+Simply go to the root of the repo and run `start.sh`:
 ```
-./test.sh
+./start.sh
 ```
 
 Things start to move now.
