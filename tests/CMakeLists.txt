@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(testclient)
+project(tests)
 
-file(GLOB TESTCLIENT_SRC
-  ${PROJECT_SOURCE_DIR}/*.cpp
+find_package(Boost COMPONENTS thread REQUIRED)
+
+add_executable(testsimple
+  simple/main.cpp
 )
 
-## Declare an executable
+target_link_libraries(testsimple
+  m
+  Boost::thread
+)
+
+
 add_executable(testclient
-  ${TESTCLIENT_SRC}
+  client/main.cpp
 )
 
 target_include_directories(testclient
@@ -16,6 +23,7 @@ target_include_directories(testclient
 )
 
 target_link_libraries(testclient
+  clipsclient
   m
   Boost::thread
 )

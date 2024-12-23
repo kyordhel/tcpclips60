@@ -18,6 +18,9 @@ add_subdirectory(clipswrapper)
 ## Build the server
 add_subdirectory(clipsserver)
 
+## Build the client
+add_subdirectory(clipsclient)
+
 ## Build the clipscontrol app
 # add_subdirectory(clipscontrol)
 
