@@ -22,7 +22,7 @@ add_subdirectory(clipsserver)
 add_subdirectory(clipsclient)
 
 ## Build the clipscontrol app
-# add_subdirectory(clipscontrol)
+add_subdirectory(clipscontrol)
 
 ## Build the testing apps
 add_subdirectory(tests)

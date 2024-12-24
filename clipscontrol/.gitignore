@@ -4,15 +4,13 @@
 !.gitignore
 !.gitattributes
 !CMakeLists.txt
-!Doxyfile
-!LICENSE
 !readme.MD
+# And these filetypes
+!*.c
+!*.cpp
+!*.clp
+!*.dat
+!*.h
+!*.hpp
 # And these directories
-!build/
-!include/
-!clips60/
-!clipsclient/
-!clipsserver/
-!clipscontrol/
-!docs/
-!tests/
+!src/
