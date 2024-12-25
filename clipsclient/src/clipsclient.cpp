@@ -1,12 +1,17 @@
 #include "clipsclient.h"
+#include "request.h"
+#include "reply.h"
+
+#include <regex>
 #include <boost/bind/bind.hpp>
+
 
 namespace asio = boost::asio;
 using asio::ip::tcp;
 
 
 ClipsClient::ClipsClient(const Private&) :
-	is(&buffer){}
+	is(&buffer), clipsStatus(-1){}
 
 
 
@@ -32,9 +37,9 @@ bool ClipsClient::connect(const std::string& address, uint16_t port){
 	try{
 		socketPtr->connect(remote_endpoint);
 	}
-	catch(int ex){
-		fprintf(stderr, "Could not connect to CLIPS on %s:%u.\n", address.c_str(), port);
-		fprintf(stderr, "Run the server and pass the right parameters.\n");
+	catch(...){
+		// fprintf(stderr, "Could not connect to CLIPS on %s:%u.\n", address.c_str(), port);
+		// fprintf(stderr, "Run the server and pass the right parameters.\n");
 		return false;
 	}
 
@@ -52,6 +57,7 @@ bool ClipsClient::connect(const std::string& address, uint16_t port){
 
 
 void ClipsClient::disconnect(){
+	abortAllRPC();
 	if(serviceThreadPtr){
 		io_service.stop();
 		serviceThreadPtr->join();
@@ -62,38 +68,96 @@ void ClipsClient::disconnect(){
 
 
 void ClipsClient::loadFile(const std::string& file){
-	sendRaw( "(load " + file + ")" );
+	// sendRaw( "(load " + file + ")" );
+	rpc("load", file);
 }
 
 
 
 void ClipsClient::reset(){
-	sendRaw("(reset)");
+	// sendRaw("(reset)");
+	rpc("reset");
 }
 
 
 
 void ClipsClient::clear(){
-	sendRaw("(reset)");
+	// sendRaw("(clear)");
+	rpc("clear");
 }
 
 
 
 void ClipsClient::run(int32_t n){
 	if( n < -1 ) n = -1;
-	sendRaw( "(run "+ std::to_string(n) +")" );
+	// sendRaw( "(run "+ std::to_string(n) +")" );
+	rpc("run", std::to_string(n));
 }
 
 
 
 void ClipsClient::assertFact(const std::string& fact){
-	sendRaw( "(assert " + fact + ")" );
+	rpc("assert", fact);
 }
 
 
 
 void ClipsClient::retractFact(const std::string& fact){
-	sendRaw( "(retract " + fact + ")" );
+	rpc("raw", "(retract " + fact + ")" );
+}
+
+	/**
+	 * Requests ClipsServer to execute a command.
+	 * A command is any of
+	 * 		assert   Asserts the fact given in args
+	 * 		raw      Injects the string in CLIPS language contained in args
+	 * 		path     Sets the working path of CLIPSServer
+	 * 		load     Loads the CLP or DAT file specidied in args
+	 * 		log      Sets the log level of CLIPSServer
+	 *
+	 * @param  cmd  The command to execute
+	 * @param  args The command to execute
+	 * @return      true if the command was successfully executed, false otherwise
+	 */
+bool ClipsClient::execute(const std::string& cmd, const std::string& args){
+	static std::regex rxInt("-?\\d{1,9}");
+	static std::regex rxPrint("facts|rules|agenda");
+	static std::regex rxWatch("functions|globals|facts|rules");
+	std::smatch match;
+
+	if(cmd == "reset") return rpc(cmd);
+	else if(cmd == "clear") return rpc(cmd);
+	else if(cmd == "run") {
+		if( args.empty() ) return rpc(cmd, "-1");
+		if( std::regex_match(args, match, rxInt) ) return rpc(cmd, args);
+		return false;
+	}
+	else if(cmd == "print")  return std::regex_match(args, match, rxPrint) ? rpc(cmd, args) : false;
+	else if(cmd == "watch")  return std::regex_match(args, match, rxWatch) ? rpc(cmd, args) : false;
+	else if(cmd == "assert") return !args.empty() ? rpc(cmd, args) : false;
+	else if(cmd == "raw")    return !args.empty() ? rpc(cmd, args) : false;
+	else if(cmd == "path")   return !args.empty() ? rpc(cmd, args) : false;
+	else if(cmd == "load")   return !args.empty() ? rpc(cmd, args) : false;
+	else if(cmd == "log")    return !args.empty() ? rpc(cmd, args) : false;
+	return false;
+}
+
+
+bool ClipsClient::query(const std::string& query, std::string& result){
+	return rpc("query", query, result);
+}
+
+
+uint32_t ClipsClient::getWatches(){
+	rpc("watch");
+	return clipsStatus;
+}
+
+
+uint32_t ClipsClient::toggleWatch(const std::string& watch){
+	if( (watch == "functions") || (watch == "globals") || (watch == "facts") || (watch == "rules") )
+		rpc("watch", watch);
+	return clipsStatus;
 }
 
 
@@ -104,21 +168,74 @@ bool ClipsClient::send(const std::string& s){
 }
 
 
-
-bool ClipsClient::sendRaw(const std::string& s){
+bool ClipsClient::sendCommand(const std::string& command, const std::string& args, uint32_t& cmdId){
+	static uint32_t __cmdId = 1;
 	if(!socketPtr || !socketPtr->is_open() ) return false;
 
-	uint16_t packetsize = 7 + s.length();
-	char buffer[packetsize];
-	size_t i = 0;
-	buffer[i++] = *((char*)&packetsize);
-	buffer[i++] = *((char*)&packetsize +1);
-	buffer[i++] = 0; buffer[i++] = 'r'; buffer[i++] = 'a'; buffer[i++] = 'w'; buffer[i++] = ' ';
-	for(;i < packetsize; ++i)
-		buffer[i] = s[i-7];
-	socketPtr->send( asio::buffer(buffer, packetsize) );
+	Request rq(command, args);
+	cmdId = rq.getCommandId();
+	socketPtr->send( asio::buffer(rq.getPayload()) );
 
 	return true;
+}
+
+
+bool ClipsClient::awaitResponse(int cmdId, bool& success, std::string& result){
+	std::unique_lock<std::mutex> lock(pcmutex);
+	bool aborted = false;
+	// do{
+	// 	pccv.wait(lock);
+	// } while(!hasReponseArrived(cmdId, aborted));
+	pccv.wait(lock, [&]{ return hasReponseArrived(cmdId, aborted); } );
+	if(!pendingCommands[cmdId] || aborted) return false;
+	result = pendingCommands[cmdId]->getResult();
+	pendingCommands.erase(cmdId);
+	return true;
+}
+
+
+bool ClipsClient::hasReponseArrived(uint32_t cmdId, bool& aborted){
+	if( !pendingCommands.count(cmdId) ){
+		aborted = true;
+		return true;
+	}
+	return pendingCommands[cmdId] == NULL;
+}
+
+
+bool ClipsClient::rpc(const std::string& cmd, const std::string& args, std::string& result){
+	uint32_t cmdId = 0;
+	bool success = false;
+	if( !sendCommand(cmd, args, cmdId) ) return false;
+	{std::lock_guard<std::mutex> lock(pcmutex);
+		pendingCommands[cmdId] = NULL;
+	}
+	if( !awaitResponse(cmdId, success, result) ) return false;
+	return success;
+}
+
+bool ClipsClient::rpc(const std::string& cmd){
+	std::string result;
+	return rpc(cmd, "", result);
+}
+
+bool ClipsClient::rpc(const std::string& cmd, const std::string& args){
+	std::string result;
+	return rpc(cmd, args, result);
+}
+
+
+void ClipsClient::abortAllRPC(){
+	std::unique_lock<std::mutex> lock(pcmutex);
+	pendingCommands.clear();
+	lock.unlock();
+	pccv.notify_all();
+}
+
+
+bool ClipsClient::sendRaw(const std::string& s){
+	uint32_t cmdId;
+	return sendCommand("raw", s, cmdId);
 }
 
 
@@ -150,15 +267,44 @@ void ClipsClient::asyncReadHandler(const boost::system::error_code& error, size_
 			is.unget(); is.unget();
 			break;
 		}
+		// If message size is 2 or less (empty/malformed), discard.
+		if(!(msgsize-=2)) continue;
 		// 2. Read the whole message. Bytes read are removed from the buffer by the istream
-		std::string s(msgsize-=2, 0);
+		std::string s(msgsize, 0);
 		is.read(&s[0], msgsize);
-		// 3. Publish the read string.
-		onMessageReceived(s);
-		// Repeat while buffer has data
-		}while(buffer.size() > 0);
 
-		beginReceive();
+		// 3. If the message is a command's response, process it. Else publish the read string.
+		if(s[0] == 0) handleResponseMesage(s);
+		else onMessageReceived(s);
+		// Repeat while buffer has data
+	}while(buffer.size() > 0);
+
+	beginReceive();
+}
+
+
+void ClipsClient::handleResponseMesage(const std::string& s){
+	ReplyPtr rplptr = Reply::fromMessage(s);
+	if( rplptr ){
+		if(rplptr->getCommandId() == -1){
+			updateStatus(rplptr);
+			return;
+		}
+		std::unique_lock<std::mutex> lock(pcmutex);
+		if( !pendingCommands.count(rplptr->getCommandId()) )  return;
+		pendingCommands[rplptr->getCommandId()] = rplptr;
+		lock.unlock();
+		pccv.notify_all();
+	}
+}
+
+
+void ClipsClient::updateStatus(ReplyPtr r){
+	const std::string& result = r->getResult();
+	// printf("ClipsClient::updateStatus | %d | %d | {%s}\n", r->getCommandId(), r->getSuccess(), result.c_str());
+	if( (r->getCommandId() != -1) || !r->getSuccess() || (result.substr(0, 9) != "watching:" ))
+		return;
+	clipsStatus = std::stoi( result.substr(9) );
 }
 
 

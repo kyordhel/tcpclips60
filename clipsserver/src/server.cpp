@@ -109,22 +109,14 @@ void Server::initCLIPS(int argc, char **argv){
 
 bool Server::initTcpServer(){
 
-	// tcp::endpoint listen_ep{tcp::v4(), port};
 	tcp::endpoint listen_ep{{}, port};
 	acceptorPtr = std::shared_ptr<tcp::acceptor>(new tcp::acceptor(io_context, listen_ep));
 	acceptorPtr->set_option(tcp::acceptor::reuse_address(true));
-	// acceptor.async_accept(boost::bind(&Server::acceptHandler, this));
-	// auto socketPtr = std::make_shared(tcp::socket);
-	// acceptor.async_accept([this](const boost::system::error_code& error, tcp::socket peer)->void{ acceptHandler(error, peer); });
-	// tcp::socket socket = acceptor.accept();
 
 	std::shared_ptr<tcp::socket> socketPtr(new tcp::socket(io_context));
-	// std::shared_ptr<Session> sessionPtr(new Session(io_context));
 	acceptorPtr->async_accept(
 		*socketPtr,
-		// *sessionPtr,
 		boost::bind(&Server::acceptHandler, this, boost::asio::placeholders::error, socketPtr));
-	// acceptorPtr->bind(listen_ep);
 	acceptorPtr->listen();
 	printf("Listening on port %u\n", port);
 	return true;
@@ -136,6 +128,7 @@ void Server::acceptHandler(const boost::system::error_code& error, std::shared_p
 		auto sp = Session::makeShared(socketPtr, *this);
 		clients[sp->getEndPointStr()] = sp;
 		printf("Connected client %s\n", sp->getEndPointStr().c_str());
+		publishStatus();
 	}
 
 	std::shared_ptr<tcp::socket> nextSckt(new tcp::socket(io_context));
@@ -172,9 +165,9 @@ void Server::resetCLIPS(){
 }
 
 
-void Server::sendCommand(std::string const& s){
+bool Server::sendCommand(std::string const& s){
 	printf("Executing command: %s\n", s.c_str());
-	clips::sendCommand(s);
+	return clips::sendCommand(s);
 }
 
 
@@ -241,11 +234,12 @@ void Server::enqueueTcpMessage(std::shared_ptr<TcpMessage> messagePtr){
 
  */
 void Server::parseMessage(std::shared_ptr<TcpMessage> msg){
-	// printf("[%s]: %s\n", msg->getSource().c_str(), msg->getMessage().c_str());
-
 	std::string& m = msg->getMessage();
-	if((m[0] == 0) && (m.length()>1)){
-		handleCommand(m.substr(1));
+
+	if((m[0] == 0) && (m.length() > 5)){
+		std::string result;
+		bool success = handleCommand(m.substr(5), result);
+		acknowledgeMessage(msg, success, result);
 		return;
 	}
 
@@ -258,76 +252,101 @@ static inline
 void splitCommand(const std::string& s, std::string& cmd, std::string& arg){
 	std::string::size_type sp = s.find(" ");
 	if(sp == std::string::npos){
-		cmd = s;
+		// Trims leading zeroes from command, if any.
+		cmd = s.substr(0, s.find_first_of( (char)0 ));
 		arg.clear();
 	}
 	else{
 		cmd = s.substr(0, sp);
 		arg = s.substr(sp+1);
+		// Trims leading zeroes from arg, if any.
+		arg.erase(arg.find_first_of( (char)0 ));
 	}
 }
 
 
-void Server::handleCommand(const std::string& c){
+bool Server::handleCommand(const std::string& c, std::string& result){
 	std::string cmd, arg;
 	splitCommand(c, cmd, arg);
 
-	// printf("Received command %s", c.c_str());
-	if(cmd == "assert") { clips::assertString(arg); }
-	else if(cmd == "reset") { resetCLIPS(); }
-	else if(cmd == "clear") { clearCLIPS(); }
-	else if(cmd == "raw")   { sendCommand(arg); }
-	else if(cmd == "path")  { handlePath(arg); }
-	else if(cmd == "print") { handlePrint(arg); }
-	else if(cmd == "watch") { handleWatch(arg); }
-	else if(cmd == "load")  { loadFile(arg); }
-	else if(cmd == "run")   { handleRun(arg); }
-	else if(cmd == "log")   { handleLog(arg); }
-	else return;
-
-	// ROS_INFO("Handled command %s", c.c_str());
+	// if( arg.empty() ) printf("Received command {%s} (%lu bytes)\n", cmd.c_str(), cmd.length());
+	// else              printf("Received command {%s %s} (%lu bytes)\n", cmd.c_str(), arg.c_str(), cmd.length() + arg.length() + 1);
+	if(cmd == "assert")     { clips::assertString(arg); return true; }
+	else if(cmd == "reset") { resetCLIPS();             return true; }
+	else if(cmd == "clear") { clearCLIPS();             return true; }
+	else if(cmd == "query") { return clips::query(arg, result); }
+	else if(cmd == "raw")   { return sendCommand(arg); }
+	else if(cmd == "path")  { return handlePath(arg); }
+	else if(cmd == "print") { return handlePrint(arg); }
+	else if(cmd == "watch") { return handleWatch(arg); }
+	else if(cmd == "load")  { return loadFile(arg); }
+	else if(cmd == "run")   { return handleRun(arg); }
+	else if(cmd == "log")   { return handleLog(arg); }
+	// printf("Rejected\n");
+	return false;
 }
 
 
-void Server::handleLog(const std::string& arg){
+bool Server::handleLog(const std::string& arg){
+	return true;
 }
 
 
-void Server::handlePath(const std::string& path){
+bool Server::handlePath(const std::string& path){
 	if(chdir(path.c_str()) != 0){
 		fprintf(stderr, "Can't access {%s}: %s\n", path.c_str(), std::strerror(errno));
 		printf("Reset clppath  to {%s}\n", clppath.c_str() );
+		return false;
 	}
 	clppath = path;
+	return true;
 }
 
 
-void Server::handlePrint(const std::string& arg){
+bool Server::handlePrint(const std::string& arg){
 	if(arg == "facts"){       clips::printFacts();  }
 	else if(arg == "rules"){  clips::printRules();  }
 	else if(arg == "agenda"){ clips::printAgenda(); }
+	else return false;
+	return true;
 }
 
 
-void Server::handleRun(const std::string& arg){
+int Server::handleRun(const std::string& arg){
 	int n = std::stoi(arg);
-	clips::run(n);
+	return clips::run(n);
 }
 
 
-void Server::handleWatch(const std::string& arg){
+bool Server::handleWatch(const std::string& arg){
 	if(arg == "functions"){    clips::toggleWatch(clips::WatchItem::Deffunctions); }
 	else if(arg == "globals"){ clips::toggleWatch(clips::WatchItem::Globals);      }
 	else if(arg == "facts"){   clips::toggleWatch(clips::WatchItem::Facts);        }
 	else if(arg == "rules"){   clips::toggleWatch(clips::WatchItem::Rules);        }
+	else if( !arg.empty() ) return false;
 	publishStatus();
+	return true;
+}
+
+
+void Server::acknowledgeMessage(std::shared_ptr<TcpMessage> message, bool success, const std::string& result){
+	// 1. Copy 5bytes 0x00+CommandID from original message. Discard the rest.
+	// 2. Place success as 1byte boolean
+	// 3. Append result if any.
+	// 4. Send
+
+	std::string ack = message->getMessage().substr(0, 5);
+	ack+= success ? '\x01' : '\x00';
+	ack+= result;
+
+	clients[message->getSource()]->send( ack );
 }
 
 
 
 /* ** ********************************************************
 *
-* Class methods: ROS-related
+* Class methods: Communication
 *
 * *** *******************************************************/
 bool Server::broadcast(const std::string& message){
@@ -348,7 +367,9 @@ bool Server::sendTo(const std::string& cliEP, const std::string& message){
 
 
 bool Server::publishStatus(){
-	std::string status("watching:" + std::to_string((int)clips::getWatches()));
+	std::string status;
+	status+= '\0';
+	status+= "\xff\xff\xff\xff\x01watching:" + std::to_string((int)clips::getWatches());
 	return broadcast(status);
 }
 
@@ -457,8 +478,3 @@ void Server::printHelp(std::string const& pname){
 	std::cout << "Example:" << std::endl;
 	std::cout << "    " << pname << " -e virbot.dat -w 1 -r 1"  << std::endl;
 }
-
-// bool Bridge::srvQueryKDB(rosclips::QueryKDB::Request& req, rosclips::QueryKDB::Response& res){
-// 	clips::query(req.query, res.result);
-// 	return true;
-// }

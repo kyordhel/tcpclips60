@@ -192,18 +192,21 @@ void reqRetract(const std::string& fact){
  * @param s The string to send
  */
 void publish(const std::string& s){
-	if(!socketPtr || !socketPtr->is_open() ) return;
-	uint16_t packetsize = 7 + s.length();
-	char buffer[packetsize];
-	size_t i = 0;
-	buffer[i++] = *((char*)&packetsize);
-	buffer[i++] = *((char*)&packetsize +1);
-	buffer[i++] = 0; buffer[i++] = 'r'; buffer[i++] = 'a'; buffer[i++] = 'w'; buffer[i++] = ' ';
-	for(;i < packetsize; ++i)
-		buffer[i] = s[i-7];
-	socketPtr->send( asio::buffer(buffer, packetsize) );
-}
+	static int cmdId = 1;
 
+	if(!socketPtr || !socketPtr->is_open() ) return;
+	// 2byte size + 0x00 + 4byte cmdId + command + space + args
+	uint16_t packetsize = 11 + s.length();
+	char buffer[packetsize];
+	std::memcpy(buffer, &packetsize, 2);
+	buffer[2] = 0;
+	std::memcpy(buffer+3, &cmdId, 4);
+	std::memcpy(buffer+7, "raw ", 4);
+	s.copy(buffer+11, s.length());
+
+	socketPtr->send( asio::buffer(buffer, packetsize) );
+	++cmdId;
+}
 
 
 void beginReceive(){
@@ -233,7 +236,8 @@ void asyncReadHandler(const boost::system::error_code& error, size_t bytes_trans
 		std::string s(msgsize-=2, 0);
 		is.read(&s[0], msgsize);
 		// 3. Print read string.
-		printf( "CLIPS: %s%c", s.c_str(), *(s.end()) == '\n' ? 0 : *(s.end()) );
+		if( std::strlen(s.c_str()) > 0 )
+			printf( "CLIPS: %s%c", s.c_str(), *(s.end()) == '\n' ? 0 : *(s.end()) );
 		// Repeat while buffer has data
 		}while(buffer.size() > 0);
 

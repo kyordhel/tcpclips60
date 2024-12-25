@@ -3,12 +3,17 @@
 #pragma once
 
 /** @cond */
+#include <map>
+#include <mutex>
 #include <string>
 #include <iomanip>
+#include <condition_variable>
 
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
 /** @endcond */
+
+#include "reply.h"
 
 class ClipsClient;
 typedef std::shared_ptr<ClipsClient> ClipsClientPtr;
@@ -87,10 +92,51 @@ public:
 	void retractFact(const std::string& fact);
 
 	/**
+	 * Requests ClipsServer to execute a command.
+	 * A command is any of
+	 * 		assert   Asserts the fact given in args
+	 * 		reset    Resets CLIPS
+	 * 		clear    Clears CLIPS KB
+	 * 		raw      Injects the string in CLIPS language contained in args
+	 * 		path     Sets the working path of CLIPSServer
+	 * 		print    Prints the elements specified in args (any of {facts, rules, agenda})
+	 * 		watch    Toggles the watch set in args (any of {functions, globals, facts, rules})
+	 * 		load     Loads the CLP or DAT file specidied in args
+	 * 		run      Executes (run n) with the integer value given in args
+	 * 		log      Sets the log level of CLIPSServer
+	 *
+	 * @param  cmd  The command to execute
+	 * @param  args The command to execute
+	 * @return      true if the command was successfully executed, false otherwise
+	 */
+	bool execute(const std::string& cmd, const std::string& args);
+
+	/**
+	 * Requests ClipsServer to perform a query on the KB
+	 * @param  query  A string containing query to perform on CLIPS language
+	 * @param  result The results yielded by CLIPS
+	 * @return        true if the query was performed, false otherwise
+	 */
+	bool query(const std::string& query, std::string& result);
+
+	/**
 	 * Sends the given string to CLIPSServer
 	 * @param s The string to send
 	 */
 	bool send(const std::string& s);
+
+	/**
+	 * Requests ClipsServer to report the active watches
+	 * @return       An integer containing CLIPS status
+	 */
+	uint32_t getWatches();
+
+	/**
+	 * Requests ClipsServer to toggle a watch
+	 * @param  watch Any of {functions, globals, facts, rules}
+	 * @return       An integer containing CLIPS status
+	 */
+	uint32_t toggleWatch(const std::string& watch);
 
 public:
 	ClipsClientPtr getPtr();
@@ -104,17 +150,18 @@ public:
 	void removeDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 
 protected:
-
 	/**
 	 * Sends the given string to CLIPSServer as a raw command to be executed by CLIPS
 	 * @param s The string to send
 	 */
 	bool sendRaw(const std::string& s);
 
+
 	/**
 	 * Begins an asynchronous read operation
 	 */
 	void beginReceive();
+
 
 	/**
 	 * Handles asyncrhonous data reception
@@ -143,6 +190,63 @@ protected:
 
 private:
 	/**
+	 * Sends the given command to ClipsServer
+	 * @param command The command to send
+	 * @param args    The arguments for the command
+	 */
+	bool sendCommand(const std::string& command, const std::string& args, uint32_t& cmdId);
+
+	/**
+	 * Awaits until a response arrives from the server
+	 * @param cmdId   The ID of the command that awaits for response
+	 * @param success When this method returns contains a boolean indicating
+	 *                whether the execution on the remote server was successful
+	 * @param result  When this method returns contains the results produced
+	 *                by the rpc call on the remote server
+	 */
+	bool awaitResponse(int cmdId, bool& success, std::string& result);
+
+	/**
+	 * Performs a RPC call on CLIPSServer to execute a command and synchronously
+	 * awaits for the response to arrive
+	 * @param cmd     The command to send and execute
+	 * @param args    The arguments for the command
+	 * @param result  When this method returns contains the results produced
+	 *                by the rpc call on the remote server
+	 * @return        true if the RPC was successfully completed, false otherwise.
+	 */
+	bool rpc(const std::string& cmd, const std::string& args, std::string& result);
+	bool rpc(const std::string& cmd);
+	bool rpc(const std::string& cmd, const std::string& args);
+
+	/**
+	 * Aborts all RPC request releasing all waiting locks. To be used during disconnection.
+	 */
+	void abortAllRPC();
+
+	/**
+	 * Analyzes a received response and triggers the mechanisms to complete RPCs for issued commands
+	 * @param s The received message
+	 */
+	void handleResponseMesage(const std::string& s);
+
+	/**
+	 * Checks whether the response for a given command has arrived.
+	 * For use of a condition variable
+	 * @param  cmdId   The id of the command
+	 * @param  aborted A value indicating whether the call was aborted (e.g. disconnection)
+	 * @return         true if the response has arrived, false otherwise
+	 */
+	bool hasReponseArrived(uint32_t cmdId, bool& aborted);
+
+	/**
+	 * Updates the status based on the info sent by CLIPSServer
+	 * @param ReplyPtr A pointer to the reply object containing the status
+	 */
+	void updateStatus(ReplyPtr);
+
+private:
+	/**
 	 * Service required for async communications
 	 */
 	boost::asio::io_service io_service;
@@ -168,13 +272,40 @@ private:
 	std::istream is;
 
 	/**
+	 * Protection lock for the pendingCommands map
+	 */
+	std::mutex pcmutex;
+
+	/**
+	 * Condition variable to notify RPC waiters their response has arrived
+	 */
+	std::condition_variable pccv;
+
+	/**
+	 * Stores the ids of commands sent that are awaiting for a response;
+	 * as well as the response when it arrives
+	 */
+	std::map<uint32_t, ReplyPtr> pendingCommands;
+
+	/**
 	 * Stores handler functions for message reception
 	 */
 	std::vector<std::function<void(const ClipsClientPtr&, const std::string&)>> messageReceivedHandlers;
+
+	/**
+	 * Stores handler functions for connect events
+	 */
 	std::vector<std::function<void(const ClipsClientPtr&)>> connectedHandlers;
+
+	/**
+	 * Stores handler functions for disconnection events
+	 */
 	std::vector<std::function<void(const ClipsClientPtr&)>> disconnectedHandlers;
 
-
+	/**
+	 * Stores CLIPS status and active watches
+	 */
+	uint32_t clipsStatus;
 
 
 // Facotry functions replace constructor

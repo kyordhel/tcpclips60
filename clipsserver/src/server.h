@@ -125,7 +125,7 @@ protected:
 	 * Injects a command into CLIPS by calling clisp::sendCommand(s)
 	 * @param s The CLIPS command to be injected
 	 */
-	void sendCommand(std::string const& s);
+	bool sendCommand(std::string const& s);
 
 	/**
 	 * Clears CLIPS by calling clips::clear()
@@ -180,29 +180,39 @@ private:
 	// void parseMessage(const TcpMessage& m);
 
 	/**
+	 * Acknowledges reception/excecution of a message
+	 * @param message   The message to acknowledge
+	 * @param success   Optional. Indicates whether the command contained in the message
+	 *                  was successfully executed. Default: true.
+	 * @param response  Optional. Contains the execution result of the command contained
+	 *                  in the message, if any. Default: an empty string.
+	 */
+	void acknowledgeMessage(std::shared_ptr<TcpMessage> message, bool success=true, const std::string& result = "");
+
+	/**
 	 * Handles commands received via topicIn
 	 * @param c The received command message
 	 */
-	void handleCommand(const std::string& c);
+	bool handleCommand(const std::string& c, std::string& result);
 
 	/**
 	 * Unimplemented
 	 * @param arg Unimplemented
 	 */
-	void handleLog(const std::string& arg);
+	bool handleLog(const std::string& arg);
 
 	/**
 	 * Handles path request commands received via topicIn
 	 * @param path The path where CLP files are
 	 */
-	void handlePath(const std::string& path);
+	bool handlePath(const std::string& path);
 
 	/**
 	 * Handles print request commands received via topicIn
 	 * @param arg What to print. Accepted values are facts, rules
 	 *            and agenda.
 	 */
-	void handlePrint(const std::string& arg);
+	bool handlePrint(const std::string& arg);
 
 	/**
 	 * Handles run request commands received via topicIn.
@@ -210,7 +220,7 @@ private:
 	 * @param arg A string representation of an integer specifying
 	 *            the maximum number of run steps to perform
 	 */
-	void handleRun(const std::string& arg);
+	int handleRun(const std::string& arg);
 
 	/**
 	 * Handles toggle-watch request commands received via topicIn.
@@ -218,7 +228,7 @@ private:
 	 * of functions, globals, facts or rules
 	 * @param arg A string specifying which watch shall be toggled
 	 */
-	void handleWatch(const std::string& arg);
+	bool handleWatch(const std::string& arg);
 
 	/**
 	 * Parses command line arguments.

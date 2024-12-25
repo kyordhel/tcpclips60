@@ -116,11 +116,16 @@ def publish(s:str):
 
 	@param s The string to send
 	'''
-	msg = f'\0raw {s}'
-	payload = msg.encode('utf8')
-	msglen = struct.pack('@H', 2 + len(payload))
-	payload = msglen + payload
+	# A TCP packet is 2byte size + content
+	# A command is 0x00 + 4byte ID + content
+	msg = f'raw {s}'
+	encmsg = msg.encode('utf8')
+	msglen = struct.pack('@H', 7 + len(encmsg))
+	header = msglen + struct.pack('x') + struct.pack('I', publish.cmdId)
+	payload = header + encmsg
 	sckt.send( payload )
+	publish.cmdId += 1
+publish.cmdId = 1
 #end def
 
 
@@ -162,12 +167,13 @@ def async_rcv_loop():
 
 def printMessages(data):
 	cc = 0;
-	while cc < len(data):
+	while cc < (len(data) - 3):
 		msglen = struct.unpack('@H', data[cc:cc+2])[0] - 2
 		cc+=2
-		msg = data[cc:cc+msglen].decode('utf-8')
-		if msg:
-			print(f'CLIPS: { msg.strip() }')
+		if data[cc] != 0: # Skip commands and status messages
+			msg = data[cc:cc+msglen].decode('utf-8')
+			if msg:
+				print(f'CLIPS: { msg.strip() }')
 		cc+= msglen
 #end def
 
