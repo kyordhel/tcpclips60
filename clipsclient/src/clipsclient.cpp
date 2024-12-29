@@ -305,6 +305,7 @@ void ClipsClient::updateStatus(ReplyPtr r){
 	if( (r->getCommandId() != -1) || !r->getSuccess() || (result.substr(0, 9) != "watching:" ))
 		return;
 	clipsStatus = std::stoi( result.substr(9) );
+	onClipsStatusChanged();
 }
 
 
@@ -334,6 +335,14 @@ void ClipsClient::onMessageReceived(const std::string& s){
 }
 
 
+void ClipsClient::onClipsStatusChanged(){
+	for(auto it = clipsStatusChangedHandlers.begin(); it != clipsStatusChangedHandlers.end(); ++it){
+		try{ (*it)( getPtr(), clipsStatus ); }
+		catch(int err){}
+	}
+}
+
+
 void ClipsClient::addConnectedHandler(std::function<void(const ClipsClientPtr&)> handler){
 	if(!handler) return;
 	connectedHandlers.push_back(handler);
@@ -350,6 +359,12 @@ void ClipsClient::addMessageReceivedHandler(std::function<void(const ClipsClient
 	if(!handler) return;
 	messageReceivedHandlers.push_back(handler);
 }
+
+void ClipsClient::addClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler){
+	if(!handler) return;
+	clipsStatusChangedHandlers.push_back(handler);
+}
+
 
 
 
@@ -385,5 +400,17 @@ void ClipsClient::removeMessageReceivedHandler(std::function<void(const ClipsCli
 	for(auto it = messageReceivedHandlers.begin(); it != messageReceivedHandlers.end(); ++it){
 		if (it->target<HT>() != htarget) continue;
 		messageReceivedHandlers.erase(it);
+	}
+}
+
+
+void ClipsClient::removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler){
+	if(!handler) return;
+
+	typedef void(HT)(const ClipsClientPtr&, uint32_t);
+	auto htarget = handler.target<HT>();
+	for(auto it = clipsStatusChangedHandlers.begin(); it != clipsStatusChangedHandlers.end(); ++it){
+		if (it->target<HT>() != htarget) continue;
+		clipsStatusChangedHandlers.erase(it);
 	}
 }

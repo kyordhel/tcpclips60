@@ -142,10 +142,12 @@ public:
 	ClipsClientPtr getPtr();
 
 	void addMessageReceivedHandler(std::function<void(const ClipsClientPtr&, const std::string&)> handler);
+	void addClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler);
 	void addConnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 	void addDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 
 	void removeMessageReceivedHandler(std::function<void(const ClipsClientPtr&, const std::string&)> handler);
+	void removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler);
 	void removeConnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 	void removeDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 
@@ -187,6 +189,12 @@ protected:
 	 * @param handler The received message string
 	 */
 	void onMessageReceived(const std::string& s);
+
+	/**
+	 * Calls handles for clips status change
+	 * @param handler The new status
+	 */
+	void onClipsStatusChanged();
 
 private:
 	/**
@@ -291,6 +299,11 @@ private:
 	 * Stores handler functions for message reception
 	 */
 	std::vector<std::function<void(const ClipsClientPtr&, const std::string&)>> messageReceivedHandlers;
+
+	/**
+	 * Stores handler functions for status changed event
+	 */
+	std::vector<std::function<void(const ClipsClientPtr&, uint32_t)>> clipsStatusChangedHandlers;
 
 	/**
 	 * Stores handler functions for connect events
