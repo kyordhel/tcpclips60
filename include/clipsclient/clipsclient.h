@@ -146,10 +146,12 @@ public:
 	void addConnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 	void addDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 
+#if __GNUC__ > 10
 	void removeMessageReceivedHandler(std::function<void(const ClipsClientPtr&, const std::string&)> handler);
 	void removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler);
 	void removeConnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 	void removeDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
+#endif
 
 protected:
 	/**

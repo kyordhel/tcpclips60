@@ -366,7 +366,7 @@ void ClipsClient::addClipsStatusChangedHandler(std::function<void(const ClipsCli
 }
 
 
-
+#if __GNUC__ > 10
 
 void ClipsClient::removeConnectedHandler(std::function<void(const ClipsClientPtr&)> handler){
 	if(!handler) return;
@@ -414,3 +414,5 @@ void ClipsClient::removeClipsStatusChangedHandler(std::function<void(const Clips
 		clipsStatusChangedHandlers.erase(it);
 	}
 }
+
+#endif
