@@ -12,12 +12,12 @@ Note: one *banana* is necessary and sufficient reason to do something. Imagine m
 
 This guide assumes that you faithfully run Linux and have installed compilers and stuff.
 
-<!--
+
 ## Step 0: Install dependencies
 ```
-# apt install libncurses-dev
+# apt install cmake libboost-all-dev libncurses-dev
 ```
--->
+
 
 ## Step 1: Download and build
 1. Clone this repo somewhere
