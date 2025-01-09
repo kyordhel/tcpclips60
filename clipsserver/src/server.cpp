@@ -370,6 +370,8 @@ bool Server::publishStatus(){
 	std::string status;
 	status+= '\0';
 	status+= "\xff\xff\xff\xff\x01watching:" + std::to_string((int)clips::getWatches());
+	status+= "|path:" + clppath;
+
 	return broadcast(status);
 }
 

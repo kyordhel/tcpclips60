@@ -14,6 +14,7 @@
 /** @endcond */
 
 #include "reply.h"
+#include "clipsstatus.h"
 
 class ClipsClient;
 typedef std::shared_ptr<ClipsClient> ClipsClientPtr;
@@ -126,15 +127,21 @@ public:
 	bool send(const std::string& s);
 
 	/**
+	 * REtrieves the latest reported status sent by CLIPSServer
+	 * @return       The latest reported status sent by CLIPSServer
+	 */
+	ClipsStatusPtr getStatus();
+
+	/**
 	 * Requests ClipsServer to report the active watches
-	 * @return       An integer containing CLIPS status
+	 * @return       An integer containing CLIPS watches
 	 */
 	uint32_t getWatches();
 
 	/**
 	 * Requests ClipsServer to toggle a watch
 	 * @param  watch Any of {functions, globals, facts, rules}
-	 * @return       An integer containing CLIPS status
+	 * @return       An integer containing CLIPS watches to toggle
 	 */
 	uint32_t toggleWatch(const std::string& watch);
 
@@ -142,13 +149,13 @@ public:
 	ClipsClientPtr getPtr();
 
 	void addMessageReceivedHandler(std::function<void(const ClipsClientPtr&, const std::string&)> handler);
-	void addClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler);
+	void addClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, const ClipsStatusPtr&)> handler);
 	void addConnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 	void addDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 
 #if __GNUC__ > 10
 	void removeMessageReceivedHandler(std::function<void(const ClipsClientPtr&, const std::string&)> handler);
-	void removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler);
+	void removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, const ClipsStatusPtr&)> handler);
 	void removeConnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 	void removeDisconnectedHandler(std::function<void(const ClipsClientPtr&)> handler);
 #endif
@@ -305,7 +312,7 @@ private:
 	/**
 	 * Stores handler functions for status changed event
 	 */
-	std::vector<std::function<void(const ClipsClientPtr&, uint32_t)>> clipsStatusChangedHandlers;
+	std::vector<std::function<void(const ClipsClientPtr&, const ClipsStatusPtr&)>> clipsStatusChangedHandlers;
 
 	/**
 	 * Stores handler functions for connect events
@@ -320,7 +327,7 @@ private:
 	/**
 	 * Stores CLIPS status and active watches
 	 */
-	uint32_t clipsStatus;
+	ClipsStatusPtr clipsStatus;
 
 
 // Facotry functions replace constructor

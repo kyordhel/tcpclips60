@@ -71,7 +71,7 @@ bool queryHandler(const std::string& query, std::string& result);
 void connectedEH(const ClipsClientPtr& client);
 void disconnectedEH(const ClipsClientPtr& client);
 void messageReceivedEH(const ClipsClientPtr&, const std::string& msg);
-void clipsStatusChangedEH(const ClipsClientPtr&, uint32_t status);
+void clipsStatusChangedEH(const ClipsClientPtr&, const ClipsStatusPtr& status);
 
 /* ** ********************************************************
 * Main (program anchor)
@@ -155,8 +155,9 @@ void disconnectedEH(const ClipsClientPtr& client){
  * @param client The ClipsClient that raises the event
  * @param status The clips status
  */
-void clipsStatusChangedEH(const ClipsClientPtr&, uint32_t status){
-	ncwPtr->setWatchFlags(status);
+void clipsStatusChangedEH(const ClipsClientPtr&, const ClipsStatusPtr& status){
+	if(status)
+		ncwPtr->setWatchFlags(status->getWatches());
 }
 
 /**

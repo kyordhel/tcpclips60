@@ -11,7 +11,7 @@ using asio::ip::tcp;
 
 
 ClipsClient::ClipsClient(const Private&) :
-	is(&buffer), clipsStatus(-1){}
+	is(&buffer), clipsStatus(NULL){}
 
 
 
@@ -150,14 +150,14 @@ bool ClipsClient::query(const std::string& query, std::string& result){
 
 uint32_t ClipsClient::getWatches(){
 	rpc("watch");
-	return clipsStatus;
+	return clipsStatus ? clipsStatus->getWatches() : -1;
 }
 
 
 uint32_t ClipsClient::toggleWatch(const std::string& watch){
 	if( (watch == "functions") || (watch == "globals") || (watch == "facts") || (watch == "rules") )
 		rpc("watch", watch);
-	return clipsStatus;
+	return clipsStatus ? clipsStatus->getWatches() : -1;
 }
 
 
@@ -299,12 +299,15 @@ void ClipsClient::handleResponseMesage(const std::string& s){
 }
 
 
+
 void ClipsClient::updateStatus(ReplyPtr r){
 	const std::string& result = r->getResult();
-	// printf("ClipsClient::updateStatus | %d | %d | {%s}\n", r->getCommandId(), r->getSuccess(), result.c_str());
 	if( (r->getCommandId() != -1) || !r->getSuccess() || (result.substr(0, 9) != "watching:" ))
 		return;
-	clipsStatus = std::stoi( result.substr(9) );
+	// clipsStatus = std::stoi( result.substr(9) );
+	ClipsStatusPtr ncs = ClipsStatus::fromString(result);
+	if(!ncs) return;
+	clipsStatus = ncs;
 	onClipsStatusChanged();
 }
 
@@ -360,7 +363,7 @@ void ClipsClient::addMessageReceivedHandler(std::function<void(const ClipsClient
 	messageReceivedHandlers.push_back(handler);
 }
 
-void ClipsClient::addClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler){
+void ClipsClient::addClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, const ClipsStatusPtr&)> handler){
 	if(!handler) return;
 	clipsStatusChangedHandlers.push_back(handler);
 }
@@ -404,10 +407,10 @@ void ClipsClient::removeMessageReceivedHandler(std::function<void(const ClipsCli
 }
 
 
-void ClipsClient::removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, uint32_t)> handler){
+void ClipsClient::removeClipsStatusChangedHandler(std::function<void(const ClipsClientPtr&, const ClipsStatusPtr&)> handler){
 	if(!handler) return;
 
-	typedef void(HT)(const ClipsClientPtr&, uint32_t);
+	typedef void(HT)(const ClipsClientPtr&, const ClipsStatusPtr&);
 	auto htarget = handler.target<HT>();
 	for(auto it = clipsStatusChangedHandlers.begin(); it != clipsStatusChangedHandlers.end(); ++it){
 		if (it->target<HT>() != htarget) continue;
