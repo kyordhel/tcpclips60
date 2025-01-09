@@ -676,7 +676,7 @@ void NCursesWin::setCLIPSStatus(const CLIPSStatus& status){
 
 
 void NCursesWin::shiftToDefaultMode(){
-	if( !dia->isVisible() ){
+	if( (dia != NULL) && !dia->isVisible() ){
 		delete dia;
 		dia = NULL;
 		wrefresh(mid);
