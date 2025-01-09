@@ -9,10 +9,14 @@ if [ ! -f ./build/clipsserver/clipsserver ]; then
 	cd ..
 fi
 
-#Script to start CLIPS
-xterm -hold -e "cd build/clipsserver && ./clipsserver" &
-sleep 0.5
-xterm -hold -e "cd build/clipscontrol && ./clipscontrol" &
 
-# xterm -hold -e "cd tests/pytest && ./test.py"
-xterm -hold -e "cd build/tests && ./testclient"
+
+#Script to start CLIPS
+xterm -geometry 80x27+100+100 -hold -e "cd build/clipsserver && ./clipsserver" &
+sleep 0.3
+xterm -geometry 160x27+100+480 -hold -e "cd build/clipscontrol && ./clipscontrol" &
+sleep 0.1
+
+# xterm -geometry 80x27+686+200 -hold -e "cd build/tests && ./testsimple"  &
+# xterm -geometry 80x27+686+200 -hold -e "cd tests/pytest && ./test.py"    &
+xterm -geometry 80x27+586+100 -hold -e "cd build/tests && ./testclient"
