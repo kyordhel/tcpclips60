@@ -3,10 +3,9 @@ This repo allows you to connect CLIPS 6.00 (version of 05/12/93) with anything s
 This CLIPS solution is purely written in C and includes no patches, fixes, or anything.
 The Server is written in C++14.
 
-Why did I use this old version?
-Don't even dare to ask. I was required to because *bananas*.
-
-Note: one *banana* is necessary and sufficient reason to do something. Imagine many.
+Why did I use this old version? Beause: _why not!?_
+CLIPS6.0 is a cool version and should suffice all our needs.
+`tcpCLIPS64` is comming [SOON™](https://wowwiki-archive.fandom.com/wiki/Soon)
 
 # QuickStart
 
