@@ -1,4 +1,4 @@
-# `tcpCLIPS60`: A ROS node binding for CLIPS 6.0
+# `tcpCLIPS60`: A Server/Client CLIPS 6.0 wrapper using TCP sockets.
 This repo allows you to connect CLIPS 6.00 (version of 05/12/93) with anything supporting sockets.
 This CLIPS solution is purely written in C and includes no patches, fixes, or anything.
 The Server is written in C++14.
@@ -14,12 +14,14 @@ This guide assumes that you faithfully run Linux and have installed compilers an
 
 ## Step 0: Install dependencies
 ```
-# apt install cmake libboost-all-dev libncurses-dev
+# apt install build-essential cmake libboost-all-dev libncurses-dev
 ```
+
+Notice that old distros like Ubuntu 18.04 might also need `libncursesw5-dev`.
 
 
 ## Step 1: Download and build
-1. Clone this repo somewhere
+1. Clone this repo somewhere. I did choose `develop` in my home folder.
 ```
 mkdir -p ~/develop
 cd develop
