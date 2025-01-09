@@ -242,7 +242,7 @@ void NCursesWin::handleKeyDefault(const uint32_t& c){
 
 		case 'P': case 'p':
 			inputAction = InputAction::Path;
-			inputBuffer = std::string(prevPath);
+			inputBuffer = std::string(serverPath);
 			shiftToInputMode("CLP path: ");
 			break;
 
@@ -424,7 +424,6 @@ void NCursesWin::savePreviousInput(){
 			prevFact = inputBuffer;
 			break;
 		case InputAction::Path:
-			prevPath = inputBuffer;
 			break;
 		case InputAction::Run:
 			runN = std::stoi(inputBuffer);
@@ -651,6 +650,14 @@ void NCursesWin::resetBottomTglWatches(){
 	updateBottom("Toggle watches", options);
 }
 
+std::string NCursesWin::getServerPath(){
+	return serverPath;
+}
+
+
+void NCursesWin::setServerPath(const std::string& path){
+	serverPath = path;
+}
 
 void NCursesWin::setWatchFlags(int flags){
 	if(flags == watchFlags) return;

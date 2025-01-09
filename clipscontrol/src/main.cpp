@@ -156,8 +156,9 @@ void disconnectedEH(const ClipsClientPtr& client){
  * @param status The clips status
  */
 void clipsStatusChangedEH(const ClipsClientPtr&, const ClipsStatusPtr& status){
-	if(status)
-		ncwPtr->setWatchFlags(status->getWatches());
+	if(!status) return;
+	ncwPtr->setWatchFlags(status->getWatches());
+	ncwPtr->setServerPath(status->getClpPath());
 }
 
 /**
