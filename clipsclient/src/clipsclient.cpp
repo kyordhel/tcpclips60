@@ -125,7 +125,6 @@ bool ClipsClient::execute(const std::string& cmd, const std::string& args){
 	static std::regex rxWatch("functions|globals|facts|rules");
 	std::smatch match;
 
-	printf("execute\n");
 	if(cmd == "reset") return rpc(cmd);
 	else if(cmd == "clear") return rpc(cmd);
 	else if(cmd == "run") {
