@@ -125,6 +125,7 @@ bool ClipsClient::execute(const std::string& cmd, const std::string& args){
 	static std::regex rxWatch("functions|globals|facts|rules");
 	std::smatch match;
 
+	printf("execute\n");
 	if(cmd == "reset") return rpc(cmd);
 	else if(cmd == "clear") return rpc(cmd);
 	else if(cmd == "run") {
@@ -183,30 +184,31 @@ bool ClipsClient::sendCommand(const std::string& command, const std::string& arg
 bool ClipsClient::awaitResponse(int cmdId, bool& success, std::string& result){
 	std::unique_lock<std::mutex> lock(pcmutex);
 	bool aborted = false;
-	// do{
-	// 	pccv.wait(lock);
-	// } while(!hasReponseArrived(cmdId, aborted));
-	pccv.wait(lock, [&]{ return hasReponseArrived(cmdId, aborted); } );
-	if(!pendingCommands[cmdId] || aborted) return false;
-	result = pendingCommands[cmdId]->getResult();
+	do{
+		pccv.wait(lock, [&]{ return hasReponseArrived(cmdId, aborted); } );
+	} while(!hasReponseArrived(cmdId, aborted));
+	if( (pendingCommands[cmdId] == nullptr) || aborted)
+		return false;
+	success = pendingCommands[cmdId]->getSuccess();
+	result  = pendingCommands[cmdId]->getResult();
 	pendingCommands.erase(cmdId);
 	return true;
 }
 
 
 bool ClipsClient::hasReponseArrived(uint32_t cmdId, bool& aborted){
-	if( !pendingCommands.count(cmdId) ){
+	if( pendingCommands.count(cmdId) < 1 ){
 		aborted = true;
 		return true;
 	}
-	return pendingCommands[cmdId] == NULL;
+	return pendingCommands[cmdId] != nullptr;
 }
 
 
 bool ClipsClient::rpc(const std::string& cmd, const std::string& args, std::string& result){
 	uint32_t cmdId = 0;
 	bool success = false;
-	if( !sendCommand(cmd, args, cmdId) ) return false;
+	if( !sendCommand(cmd, args, cmdId) ) {fprintf(stderr, "Failed to send command\n");return false;}
 	{std::lock_guard<std::mutex> lock(pcmutex);
 		pendingCommands[cmdId] = NULL;
 	}
