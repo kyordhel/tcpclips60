@@ -83,8 +83,9 @@ std::string Session::fetchStringFromBuffer(std::istream& is){
 	// Reads header again
 	uint16_t bytesToRead;
 	is.read((char*)&bytesToRead, sizeof(bytesToRead));
+	bytesToRead-= sizeof(bytesToRead);
 
-	std::string s(bytesToRead, 0);
+	std::string s(bytesToRead+1, 0);
 	is.read(&s[0], bytesToRead);
 	return s;
 }
