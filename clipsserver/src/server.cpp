@@ -131,10 +131,22 @@ void Server::acceptHandler(const boost::system::error_code& error, std::shared_p
 		publishStatus();
 	}
 
+	printf("Connected clients:\n");
+	for(auto it = clients.begin(); it != clients.end(); ++it)
+	printf("\t%s, %s\n", it->first.c_str(), it->second->getEndPointStr().c_str());
+
+
 	std::shared_ptr<tcp::socket> nextSckt(new tcp::socket(io_context));
 	acceptorPtr->async_accept(
 		*nextSckt,
 		boost::bind(&Server::acceptHandler, this, boost::asio::placeholders::error, nextSckt));
+}
+
+
+void Server::removeSession(const std::string& srep){
+	if(clients.count( srep ) < 1) return;
+	auto disconnected = clients[srep];
+	clients.erase( srep );
 }
 
 

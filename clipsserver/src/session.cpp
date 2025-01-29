@@ -52,7 +52,8 @@ size_t Session::checkTransferComplete(const boost::system::error_code& error, si
 
 void Session::asyncReadHandler(const boost::system::error_code& error, size_t bytes_transferred){
 	if(error){
-		delete this;
+		server.removeSession(endpoint);
+		// delete this;
 		return;
 	}
 
@@ -102,7 +103,7 @@ void Session::send(const std::string& s){
 	for(size_t i = 0; i < s.length(); ++i)
 		buffer[i+2] = s[i];
 	// buffer[packetsize-1] = 0;
-	socketPtr->send( asio::buffer(buffer, packetsize) );
+	asio::write(*socketPtr, asio::buffer(buffer, packetsize));
 }
 
 

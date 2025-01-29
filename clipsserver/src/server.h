@@ -103,6 +103,12 @@ public:
 	 */
 	void enqueueTcpMessage(std::shared_ptr<TcpMessage> messagePtr);
 
+	/**
+	 * Removes a session from the server. Called by Session upon disconnection.
+	 * @param sPtr The remote endpoint of the session to remove.
+	 */
+	void removeSession(const std::string& srep);
+
 
 
 protected:
