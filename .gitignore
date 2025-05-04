@@ -7,6 +7,8 @@
 !Doxyfile
 !LICENSE
 !readme.MD
+# And these filetypes
+!*.sh
 # And these directories
 !build/
 !include/
