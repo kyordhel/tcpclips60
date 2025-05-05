@@ -27,7 +27,7 @@ unset (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 # ## ##################################################################
 # BEGIN tcpCLIPS60_import.cmake >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-# This file can be placed into an external project to help locate tcpCLIPS60
+# # This file can be placed into an external project to help locate tcpCLIPS60
 # It should be include()ed prior to project()
 
 # if (DEFINED ENV{TCP_CLIPS60_PATH} AND (NOT TCP_CLIPS60_PATH))
@@ -58,15 +58,15 @@ unset (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 #         endif ()
 
 #         FetchContent_Declare(
-#                 TCP_CLIPS60
-#                 GIT_REPOSITORY https://github.com/kyordhel/tcpclips60
-#                 GIT_TAG master
+#             tcpCLIPS60
+#             GIT_REPOSITORY https://github.com/kyordhel/tcpclips60
+#             GIT_TAG master
 #         )
 
-#         if (NOT TCP_CLIPS60)
+#         if (NOT tcpCLIPS60)
 #             message("Downloading the tcpCLIPS60 API")
-#             FetchContent_Populate(TCP_CLIPS60)
-#             set(TCP_CLIPS60_PATH ${TCP_CLIPS60_SOURCE_DIR})
+#             FetchContent_Populate(tcpCLIPS60)
+#             set(TCP_CLIPS60_PATH ${tcpclips60_SOURCE_DIR})
 #         endif ()
 #         set(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR_SAVE})
 #     else ()
@@ -80,6 +80,8 @@ unset (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 # if (NOT EXISTS ${TCP_CLIPS60_PATH})
 #     message(FATAL_ERROR "Directory '${TCP_CLIPS60_PATH}' not found")
 # endif ()
+
+# message("TCP_CLIPS60_PATH: ${TCP_CLIPS60_PATH}")
 
 # set(TCP_CLIPS60_IMPORT_CMAKE_FILE ${TCP_CLIPS60_PATH}/tcpCLIPS60_import.cmake)
 # if (NOT EXISTS ${TCP_CLIPS60_IMPORT_CMAKE_FILE})
