@@ -14,8 +14,7 @@ add_library(clips60 STATIC
 
 target_include_directories(clips60
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/include/clips
-  ${PROJECT_SOURCE_DIR}/include/clips
+  ${TCP_CLIPS60_HEADERS}/clips
 )
 
 # set_target_properties(clips60

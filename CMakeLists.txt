@@ -5,6 +5,8 @@ project(socketclips)
 add_compile_options(-std=c++14)
 find_package(Boost COMPONENTS thread REQUIRED)
 
+set(TCP_CLIPS60_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 ###########
 ## Build ##
 ###########
@@ -25,4 +27,6 @@ add_subdirectory(clipsclient)
 add_subdirectory(clipscontrol)
 
 ## Build the testing apps
+if(NOT DEFINED TCP_CLIPS60_SKIP_TEST_APPS)
 add_subdirectory(tests)
+endif()

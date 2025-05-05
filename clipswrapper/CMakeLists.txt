@@ -12,8 +12,8 @@ add_library(clipswrapper STATIC
 
 target_include_directories(clipswrapper
   PUBLIC
-  ${CMAKE_SOURCE_DIR}/include/
-  ${CMAKE_SOURCE_DIR}/include/clipswrapper
+  ${TCP_CLIPS60_HEADERS}
+  ${TCP_CLIPS60_HEADERS}/clipswrapper
 )
 
 target_link_libraries(clipswrapper

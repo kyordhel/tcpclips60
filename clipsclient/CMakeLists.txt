@@ -12,8 +12,8 @@ add_library(clipsclient STATIC
 
 target_include_directories(clipsclient
   PUBLIC
-  ${CMAKE_SOURCE_DIR}/include/
-  ${CMAKE_SOURCE_DIR}/include/clipsclient
+  ${TCP_CLIPS60_HEADERS}
+  ${TCP_CLIPS60_HEADERS}/clipsclient
 )
 
 # target_link_libraries(tcpclient
