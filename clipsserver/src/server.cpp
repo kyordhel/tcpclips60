@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include <boost/bind/bind.hpp>
+#include <boost/filesystem.hpp>
 
 #include <unistd.h>
 
@@ -52,7 +53,20 @@ std::string get_current_path(){
 	return std::string(buff);
 }
 
+static inline
+std::string get_home_path(){
+	return std::getenv("HOME");
+}
 
+static inline
+std::string canonicalize_path(std::string path){
+	if (path.length() < 1) return path;
+	if(path == "~") path = std::getenv("HOME");
+	else if( (path.length() > 1) && (path.substr(0, 2) == "~/") )
+		path = std::getenv("HOME") + path.substr(1);
+	try{ return boost::filesystem::canonical(path).string(); }
+	catch(...){ return ""; }
+}
 
 
 /* ** ********************************************************
@@ -180,8 +194,8 @@ bool Server::sendCommand(std::string const& s){
 
 bool Server::loadClp(const std::string& fpath){
 	printf("Loading file '%s'...\n", fpath.c_str() );
-	if( !clips::load( fpath ) ){
-		printf("Error in file '%s' or does not exist", fpath.c_str());
+	if( !clips::load( canonicalize_path(fpath) ) ){
+		printf("Error in file '%s' or does not exist\n", fpath.c_str());
 		return false;
 	}
 	printf("File %s loaded successfully\n", fpath.c_str());
@@ -192,7 +206,7 @@ bool Server::loadClp(const std::string& fpath){
 bool Server::loadDat(const std::string& fpath){
 	if( fpath.empty() ) return false;
 	std::ifstream fs;
-	fs.open(fpath);
+	fs.open( canonicalize_path(fpath) );
 
 	if( fs.fail() || !fs.is_open() ){
 		fprintf(stderr, "File '%s' does not exists\n", fpath.c_str());
@@ -300,12 +314,15 @@ bool Server::handleLog(const std::string& arg){
 
 
 bool Server::handlePath(const std::string& path){
-	if(chdir(path.c_str()) != 0){
+	std::string cpath = canonicalize_path(path);
+	if(chdir( cpath.c_str() ) != 0){
 		fprintf(stderr, "Can't access {%s}: %s\n", path.c_str(), std::strerror(errno));
-		printf("Reset clppath  to {%s}\n", clppath.c_str() );
+		printf("Reset clppath to {%s}\n", clppath.c_str() );
 		return false;
 	}
-	clppath = path;
+	clppath = cpath;
+	printf("clppath set to {%s}\n", clppath.c_str() );
+	publishStatus();
 	return true;
 }
 

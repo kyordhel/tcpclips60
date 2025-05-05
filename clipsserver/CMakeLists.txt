@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.6)
 project(clipsserver)
 
+find_package(Boost REQUIRED COMPONENTS thread filesystem)
+
 file(GLOB CLIPSSERVER_SRC
   ${PROJECT_SOURCE_DIR}/src/*.cpp
 )
@@ -20,6 +22,7 @@ target_include_directories(clipsserver
 target_link_libraries(clipsserver
   clips60
   clipswrapper
+  Boost::filesystem
   m
   pthread
 )

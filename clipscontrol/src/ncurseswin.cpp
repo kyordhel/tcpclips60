@@ -9,6 +9,7 @@
 #include "ncfilepickermw.h"
 #include <signal.h>
 #include <thread>
+#include <boost/filesystem.hpp>
 
 #define ctrl(x) ((x) & 0x1f)
 
@@ -385,10 +386,10 @@ void NCursesWin::handleInputBS(){
 void NCursesWin::handleInputNL(){
 	switch(inputAction){
 		case InputAction::Path:
-			sendPath(inputBuffer);
+			sendPath( inputBuffer );
 			break;
 		case InputAction::Load:
-			sendLoad(inputBuffer);
+			sendLoad( inputBuffer );
 			break;
 		case InputAction::RawCmd:
 			sendCommand(inputBuffer);
