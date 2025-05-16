@@ -110,11 +110,11 @@ private:
 	void unregisterR();
 
 private:
-	bool enabled;
-	bool registered;
 	std::string routerName;
-	std::set<std::string> logicalNames;
 	clips::RouterPriority priority;
+	bool registered;
+	bool enabled;
+	std::set<std::string> logicalNames;
 	std::string buffer;
 };
 
