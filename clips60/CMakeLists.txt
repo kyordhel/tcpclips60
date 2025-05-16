@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(clips)
 
-add_definitions(-w) # disable all warnings
+# add_definitions(-w) # disable all warnings
 
 file(GLOB CLIPS_SRC
   ${PROJECT_SOURCE_DIR}/src/*.c
@@ -15,6 +15,11 @@ add_library(clips60 STATIC
 target_include_directories(clips60
   PRIVATE
   ${TCP_CLIPS60_HEADERS}/clips
+)
+
+target_compile_options(clips60
+  PRIVATE
+  -w
 )
 
 # set_target_properties(clips60
