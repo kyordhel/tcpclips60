@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.6)
 project(tests)
 
 find_package(Boost COMPONENTS thread REQUIRED)
