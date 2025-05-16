@@ -15,6 +15,7 @@
 
 /** @cond */
 #include <string>
+#include <cstdint>
 /** @endcond */
 #include "namespace.h"
 
