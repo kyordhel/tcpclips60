@@ -74,8 +74,8 @@ std::string canonicalize_path(std::string path){
 * *** *******************************************************/
 Server::Server():
 	// clipsFile("cubes.dat"),
-	port(5000), defaultMsgInFact("network 0.0.0.0:0"), acceptorPtr(NULL),
-	flgFacts(false), flgRules(false), clppath(get_current_path()){
+	flgFacts(false), flgRules(false), clppath(get_current_path()),
+	port(5000), acceptorPtr(NULL), defaultMsgInFact("network 0.0.0.0:0"){
 }
 
 Server::~Server(){

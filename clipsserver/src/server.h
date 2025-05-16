@@ -355,9 +355,9 @@ protected:
 	std::string clipsFile;
 
 	/**
-	 * Specifies the basepath where CLP files are located
+	 * When true, activates fact watching during initialization
 	 */
-	std::string clppath;
+	bool flgFacts;
 
 	/**
 	 * When true, activates defrule watching during initialization
@@ -365,9 +365,9 @@ protected:
 	bool flgRules;
 
 	/**
-	 * When true, activates fact watching during initialization
+	 * Specifies the basepath where CLP files are located
 	 */
-	bool flgFacts;
+	std::string clppath;
 
 	/**
 	 * Internal flag that keeps the bridge running.

@@ -17,5 +17,6 @@
 !clipsclient/
 !clipsserver/
 !clipscontrol/
+!clipswrapper/
 !docs/
 !tests/
