@@ -169,7 +169,6 @@ bool ClipsClient::send(const std::string& s){
 
 
 bool ClipsClient::sendCommand(const std::string& command, const std::string& args, uint32_t& cmdId){
-	static uint32_t __cmdId = 1;
 	if(!socketPtr || !socketPtr->is_open() ) return false;
 
 	Request rq(command, args);
@@ -264,7 +263,7 @@ void ClipsClient::asyncReadHandler(const boost::system::error_code& error, size_
 		// If header is incomplete, the bytes read are returned to the buffer
 		uint16_t msgsize;
 		is.read((char*)&msgsize, sizeof(msgsize));
-		if(buffer.size() < (msgsize - 2) ){
+		if(buffer.size() < (size_t)(msgsize - 2) ){
 			is.unget(); is.unget();
 			break;
 		}
@@ -287,7 +286,7 @@ void ClipsClient::asyncReadHandler(const boost::system::error_code& error, size_
 void ClipsClient::handleResponseMesage(const std::string& s){
 	ReplyPtr rplptr = Reply::fromMessage(s);
 	if( rplptr ){
-		if(rplptr->getCommandId() == -1){
+		if(rplptr->getCommandId() == Reply::CommandIdNone){
 			updateStatus(rplptr);
 			return;
 		}
@@ -303,7 +302,7 @@ void ClipsClient::handleResponseMesage(const std::string& s){
 
 void ClipsClient::updateStatus(ReplyPtr r){
 	const std::string& result = r->getResult();
-	if( (r->getCommandId() != -1) || !r->getSuccess() || (result.substr(0, 9) != "watching:" ))
+	if( (r->getCommandId() != Reply::CommandIdNone) || !r->getSuccess() || (result.substr(0, 9) != "watching:" ))
 		return;
 	// clipsStatus = std::stoi( result.substr(9) );
 	ClipsStatusPtr ncs = ClipsStatus::fromString(result);
@@ -315,7 +314,6 @@ void ClipsClient::updateStatus(ReplyPtr r){
 
 
 void ClipsClient::onConnected(){
-	int i = 1;
 	for(auto it = connectedHandlers.begin(); it != connectedHandlers.end(); ++it){
 		try{ (*it)( getPtr() ); }
 		catch(int err){}

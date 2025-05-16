@@ -41,6 +41,9 @@ public:
 	static RequestPtr fromMessage(const std::string& message);
 	static RequestPtr make_shared(const std::string& command, const std::string& args="");
 
+public:
+	static const uint32_t CommandIdNone = -1;
+
 };
 
 

@@ -37,6 +37,9 @@ public:
 	static bool matches(const Reply& rep, const Request& req);
 	static bool matches(const ReplyPtr& rep, const RequestPtr& req);
 	static ReplyPtr fromMessage(const std::string& message);
+
+public:
+	static const uint32_t CommandIdNone = -1;
 };
 
 #endif //__REPLY_H__
