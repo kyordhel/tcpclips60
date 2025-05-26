@@ -295,10 +295,14 @@ bool watching(const WatchItem& item){
 	return (int)getWatches() & (int)item;
 }
 
-
 bool argCountCheck(const std::string& functionName, const ArgCountRestriction& restriction, int count){
 	return ArgCountCheck(clipsstr(functionName), (int)restriction, count) != -1;
 }
+
+bool argRangeCheck(const std::string& functionName, uint16_t min, uint16_t max){
+	return ArgRangeCheck(clipsstr(functionName), min, max) != -1;
+}
+
 
 bool defineFunction_impl(const std::string& functionName,
 	const char& returnType,
