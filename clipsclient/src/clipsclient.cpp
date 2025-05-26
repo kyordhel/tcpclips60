@@ -106,6 +106,12 @@ void ClipsClient::retractFact(const std::string& fact){
 	rpc("raw", "(retract " + fact + ")" );
 }
 
+
+
+bool ClipsClient::setPath(const std::string& path){
+	return rpc("path", path);
+}
+
 	/**
 	 * Requests ClipsServer to execute a command.
 	 * A command is any of

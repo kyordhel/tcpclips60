@@ -93,6 +93,12 @@ public:
 	void retractFact(const std::string& fact);
 
 	/**
+	 * Sets the working path of CLIPSServer
+	 * @param  path the path where CLIPSServer should look for clp files
+	 */
+	bool setPath(const std::string& path);
+
+	/**
 	 * Requests ClipsServer to execute a command.
 	 * A command is any of
 	 * 		assert   Asserts the fact given in args
