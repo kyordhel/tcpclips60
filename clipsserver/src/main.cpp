@@ -117,7 +117,7 @@ void UserFunctions(){
  */
 int CLIPS_sendto_wrapper(){
 	// (sendto ?port ?str)
-	if( clips::argCountCheck("sendto", clips::ArgCountRestriction::Exactly, 2) )
+	if( !clips::argCountCheck("sendto", clips::ArgCountRestriction::Exactly, 2) )
 		return -1;
 
 	/* Get the values for the 1st and 2rd arguments */
@@ -141,7 +141,7 @@ int server_sendto_invoker(Server& server, const std::string& cliEP, const std::s
  */
 int CLIPS_broadcast_wrapper(){
 	// (broadcast ?str)
-	if( clips::argCountCheck("broadcast", clips::ArgCountRestriction::Exactly, 1) )
+	if( !clips::argCountCheck("broadcast", clips::ArgCountRestriction::Exactly, 1) )
 		return -1;
 
 	/* Get the values for the 1st argument */
