@@ -297,8 +297,7 @@ bool watching(const WatchItem& item){
 
 
 bool argCountCheck(const std::string& functionName, const ArgCountRestriction& restriction, int count){
-	bool result = ArgCountCheck(clipsstr(functionName), (int)restriction, count);
-	return result;
+	return ArgCountCheck(clipsstr(functionName), (int)restriction, count) != -1;
 }
 
 bool defineFunction_impl(const std::string& functionName,
