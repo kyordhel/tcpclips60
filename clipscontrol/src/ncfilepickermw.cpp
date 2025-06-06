@@ -38,8 +38,8 @@ BEGIN_NAMESPACE
 
 
 NCFilePickerMW::NCFilePickerMW(const std::string& basepath, const std::set<std::string>& filters):
-	path(basepath), filters(filters), ixFirst(0), ixSelected(0){
-		setPath(fs::path("."));
+	filters(filters), ixFirst(0), ixSelected(0){
+		setPath(basepath);
 }
 
 

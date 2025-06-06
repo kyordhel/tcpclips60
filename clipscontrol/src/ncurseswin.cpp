@@ -237,7 +237,7 @@ void NCursesWin::handleKeyDefault(const uint32_t& c){
 			break;
 
 		case 'O': case 'o':
-			dia = new NCFilePickerMW(".", {".clp", ".dat"});
+			dia = new NCFilePickerMW(serverPath, {".clp", ".dat"});
 			shiftToDialogMode();
 			break;
 
