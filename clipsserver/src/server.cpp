@@ -496,7 +496,7 @@ void Server::printHelp(std::string const& pname){
 	std::cout << "Usage:" << std::endl;
 	std::cout << "    " << pname << " ";
 	std::cout << "-p port ";
-	std::cout << "-d clp base path (where clips files are)";
+	std::cout << "-d clp base path (where clips files are) ";
 	std::cout << "-e clipsFile ";
 	std::cout << "-w watch_facts ";
 	std::cout << "-r watch_rules ";
