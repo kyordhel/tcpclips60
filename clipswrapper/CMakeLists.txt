@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 project(clipswrapper)
 
-file(GLOB BRIDGE_SRC
+file(GLOB WRAPPER_SRC
   ${PROJECT_SOURCE_DIR}/src/*.cpp
 )
 
 ## Declare static library
 add_library(clipswrapper STATIC
-  ${BRIDGE_SRC}
+  ${WRAPPER_SRC}
 )
 
 target_include_directories(clipswrapper

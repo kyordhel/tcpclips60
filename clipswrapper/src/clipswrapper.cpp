@@ -67,6 +67,11 @@ bool isValidClipsString(std::string const& str){
 }
 
 
+const std::string version(){
+	return VERSION_STRING;
+}
+
+
 int run(int maxRules){
 	return Run(maxRules);
 }

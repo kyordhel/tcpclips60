@@ -163,6 +163,11 @@ enum class ArgCountRestriction : char{
 *
 ** ** **************************************************************/
 
+/**
+ * Retrieves CLIPS' version
+ * @return CLIPS' version
+ */
+const std::string version();
 
 /**
  * Initializes the CLIPS system. Must be called prior to any other
@@ -402,109 +407,6 @@ void setFactListChanged(bool changed);
 
 /* ** ***************************************************************
 *
-* DefineFunction-related
-*
-** ** **************************************************************/
-
-/**
- * Returns a value indicating whether the number of arguments passed to
- * the user function is as expected
- * @param  functionName The name of the function to validate
- * @param  restriction  A restriction on the number of aruments
- *                      (less than, equals, greater than)
- * @param  count        The comparison value for the restriction
- * @return              true if the number of parameters matches the
- *                      restriction; false otherwise.
- */
-bool argCountCheck(
-	const std::string& functionName,
-	const ArgCountRestriction& restriction,
-	int count);
-
-/**
- * Returns a value indicating whether the number of arguments passed to
- * the user function is within a given range
- * @param  functionName The name of the function to validate
- * @param  min          The minimum number of arguments
- *                      (less than, equals, greater than)
- * @param  max          The maximum number of arguments
- * @return              true if the number of parameters is between the
- *                      gfiven range; false otherwise.
- */
-bool argRangeCheck(const std::string& functionName, uint16_t min, uint16_t max);
-
-/**
- * Implementation for the defineFunction macro (use macro instead).
- * Describes and registers an external function to CLIPS so it can be
- * accessed by CLIPS programs.
- * @remark                    It wraps over DefineFunction and DefineFunction2
- * @param  functionName       The CLIPS function name.
- * @param  returnType         A string containing the type of the value
- *                            which will be returned to CLIPS.
- * @param  functionPointer    A pointer to the actual function in C.
- * @param  actualFunctionName Name used for funcPtr but as string.
- * @param  restrictions       Optional. Restriction string used by CLIPS
- *                            DefineFunction2. Default: empty.
- * @return                    true if the function was successfully
- *                            registered. false otherwise.
- */
-bool defineFunction_impl(
-	const std::string& functionName,
-	const char& returnType,
-	int (*functionPointer)(),
-	const std::string& actualFunctionName,
-	const std::string& restrictions=""
-);
-
-/**
- * Returns an integer telling with how many arguments a
- * user-function was called from CLIPS
- * @remark Wrapper for RtnArgCount
- * @return The number of arguments passed to the user function.
- */
-int returnArgCount();
-
-
-/**
- * Returns a floating-point number from either an INTEGER or FLOAT
- * data type that was passed to a user function
- * @remark        Wrapper for RtnDouble
- * @param  argPos The position of the argument to retrieve/convert
- * @return        The string representation of the argument
- */
-double returnDouble(const int& argPos);
-
-/**
- * Returns an integer number from either an INTEGER or FLOAT
- * data type that was passed to a user function
- * @remark        Wrapper for RtnLong
- * @param  argPos The position of the argument to retrieve/convert
- * @return        The string representation of the argument
- */
-int returnInt(const int& argPos);
-
-/**
- * Returns an std::string from either a symbol, string, or instance
- * name data type that was passed to a user function
- * @remark        Wrapper for RtnLexeme
- * @param  argPos The position of the argument to retrieve/convert
- * @return        The string representation of the argument
- */
-std::string returnLexeme(const int& argPos);
-
-/**
- * Returns an integer number from either an INTEGER or FLOAT
- * data type that was passed to a user function
- * @remark        Wrapper for RtnLong
- * @param  argPos The position of the argument to retrieve/convert
- * @return        The string representation of the argument
- */
-long returnLong(const int& argPos);
-
-
-
-/* ** ***************************************************************
-*
 * Watch-related
 *
 ** ** **************************************************************/
@@ -576,6 +478,109 @@ inline constexpr WatchItem operator|(WatchItem x, WatchItem y) {
 inline constexpr WatchItem operator^(WatchItem x, WatchItem y) {
 	return static_cast<WatchItem>(static_cast<int>(x) ^ static_cast<int>(y));
 }
+
+
+
+
+/* ** ***************************************************************
+*
+* DefineFunction-related
+*
+** ** **************************************************************/
+
+/**
+ * Returns a value indicating whether the number of arguments passed to
+ * the user function is as expected
+ * @param  functionName The name of the function to validate
+ * @param  restriction  A restriction on the number of aruments
+ *                      (less than, equals, greater than)
+ * @param  count        The comparison value for the restriction
+ * @return              true if the number of parameters matches the
+ *                      restriction; false otherwise.
+ */
+bool argCountCheck(
+	const std::string& functionName,
+	const ArgCountRestriction& restriction,
+	int count);
+
+/**
+ * Returns a value indicating whether the number of arguments passed to
+ * the user function is within a given range
+ * @param  functionName The name of the function to validate
+ * @param  min          The minimum number of arguments
+ *                      (less than, equals, greater than)
+ * @param  max          The maximum number of arguments
+ * @return              true if the number of parameters is between the
+ *                      gfiven range; false otherwise.
+ */
+bool argRangeCheck(const std::string& functionName, uint16_t min, uint16_t max);
+
+/**
+ * Implementation for the defineFunction macro (use macro instead).
+ * Describes and registers an external function to CLIPS so it can be
+ * accessed by CLIPS programs.
+ * @remark                    It wraps over DefineFunction and DefineFunction2
+ * @param  functionName       The CLIPS function name.
+ * @param  returnType         A string containing the type of the value
+ *                            which will be returned to CLIPS.
+ * @param  functionPointer    A pointer to the actual function in C.
+ * @param  actualFunctionName Name used for funcPtr but as string.
+ * @param  restrictions       Optional. Restriction string used by CLIPS
+ *                            DefineFunction2. Default: empty.
+ * @return                    true if the function was successfully
+ *                            registered. false otherwise.
+ */
+bool defineFunction_impl(
+	const std::string& functionName,
+	const char& returnType,
+	int (*functionPointer)(),
+	const std::string& actualFunctionName,
+	const std::string& restrictions=""
+);
+
+/**
+ * Returns an integer telling with how many arguments a
+ * user-function was called from CLIPS
+ * @remark Wrapper for RtnArgCount
+ * @return The number of arguments passed to the user function.
+ */
+int returnArgCount();
+
+/**
+ * Returns a floating-point number from either an INTEGER or FLOAT
+ * data type that was passed to a user function
+ * @remark        Wrapper for RtnDouble
+ * @param  argPos The position of the argument to retrieve/convert
+ * @return        The string representation of the argument
+ */
+double returnDouble(const int& argPos);
+
+/**
+ * Returns an integer number from either an INTEGER or FLOAT
+ * data type that was passed to a user function
+ * @remark        Wrapper for RtnLong
+ * @param  argPos The position of the argument to retrieve/convert
+ * @return        The string representation of the argument
+ */
+int returnInt(const int& argPos);
+
+/**
+ * Returns an std::string from either a symbol, string, or instance
+ * name data type that was passed to a user function
+ * @remark        Wrapper for RtnLexeme
+ * @param  argPos The position of the argument to retrieve/convert
+ * @return        The string representation of the argument
+ */
+std::string returnLexeme(const int& argPos);
+
+/**
+ * Returns an integer number from either an INTEGER or FLOAT
+ * data type that was passed to a user function
+ * @remark        Wrapper for RtnLong
+ * @param  argPos The position of the argument to retrieve/convert
+ * @return        The string representation of the argument
+ */
+long returnLong(const int& argPos);
 
 
 }
