@@ -15,6 +15,8 @@ add_library(clips60 STATIC
 target_include_directories(clips60
   PRIVATE
   ${TCP_CLIPS60_HEADERS}/clips
+  PUBLIC
+  ${TCP_CLIPS60_HEADERS}
 )
 
 target_compile_options(clips60
