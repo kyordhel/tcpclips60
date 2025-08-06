@@ -16,6 +16,7 @@
 
 /** @cond */
 #include <string>
+#include <cstdint>
 /** @endcond */
 
 namespace utils{
